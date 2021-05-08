@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div>
+        <input class="slider" type="range" id="focusSlider" min="1" max="9">
+        <label for="focus">Focus Level</label>
+    </div>
+    <div>
+        <input class="slider" type="range" id="difficultySlider" min="1" max="9">
+        <label for="difficulty">Task Difficulty</label>
+    </div>
+
+    <button class="button" id="startTimerBtn">Let's Go</button>
+    <button class="surveyButton" id="short">Too short</button>
+    <button class="surveyButton" id="long">Too long</button>
+
+    <div><span id="time"></span></div>
+
+    <script src="app.js" async defer></script>
+</body>
+
+</html>

@@ -1,133 +1,123 @@
-// Storage Controller
+const timer = {
+    pomodoro: 1,
+    shortBreak: .1,
+    longBreak: .2,
+    longBreakInterval: 4,
+    sessions: 0,
 
-const StorageCtrl = (function () {
+}
 
-})()
+let counter;
 
-// UI Controller
+const mainButton = document.getElementById('main-btn');
 
-const UICtrl = (function () {
-    const UISelectors = {
-        focusLevel: '#focusSlider',
-        difficultyLevel: '#difficultySlider',
-        startTimerBtn: '#startTimerBtn'
+mainButton.addEventListener('click', () => {
+    const { action } = mainButton.dataset;
+    if (action == 'start') {
+        startTimer();
+    } else {
+        stopTimer();
     }
+})
 
-    return {
-        getSelectors: function () {
-            return UISelectors
-        },
+function startTimer() {
+    console.log('starting timer')
+    let { total } = timer.remainingTime
+    const endTime = Date.parse(new Date()) + total * 1000;
 
-        getTimerSetValues: function () {
-            const timerValues = {
-                focus: document.querySelector(UISelectors.focusLevel).value,
-                difficulty: document.querySelector(UISelectors.difficultyLevel).value
+
+    counter = setInterval(function () {
+        timer.remainingTime = getRemainingTime(endTime)
+        updateClock()
+
+        total = timer.remainingTime.total
+
+        if (total <= 0) {
+            clearInterval(counter)
+            if (timer.mode === 'pomodoro') timer.sessions++;
+
+            switch (timer.mode) {
+                case 'pomodoro':
+                    if (timer.sessions % timer.longBreakInterval === 0) {
+                        switchMode('longBreak')
+                    } else {
+                        switchMode('shortBreak')
+                    }
+                    break
+                default:
+                    switchMode('pomodoro')
             }
-            return timerValues
+            startTimer()
         }
+    }, 1000)
 
-    }
-})()
+    mainButton.dataset.action = 'stop'
+    mainButton.innerHTML = 'Pause'
+}
 
-// Timer Controller
+function stopTimer() {
+    clearInterval(counter)
+    console.log('stopping timer')
+    mainButton.dataset.action = 'start';
+    mainButton.innerHTML = 'Start'
+}
 
-const TimerCtrl = (function () {
+function updateClock() {
+    const { remainingTime } = timer
 
-    // Timer Constructor
-    // const Timer = function (focus, difficulty) {
+    minutes = remainingTime.minutes
+    seconds = remainingTime.seconds
 
-    // }
+    // minutes = minutes < 10 ? "0" + minutes : minutes;
+    seconds = seconds < 10 ? "0" + seconds : seconds;
 
-    const UISelectors = UICtrl.getSelectors()
+    document.querySelector('#time').textContent = minutes + ":" + seconds;
+    const percentage = (timer.remainingTime.total / (timer[timer.mode] * 60))
+    console.log(percentage * 100)
+    setProgress(percentage * 100);
 
-    const clock = function (duration) {
-        return new Promise((resolve, reject) => {
-            const button = document.querySelector(UISelectors.startTimerBtn)
-            button.classList.add("hidden")
-            var counter = setInterval(function () {
+}
 
-                minutes = parseInt(duration / 60, 10);
-                seconds = parseInt(duration % 60, 10);
-
-                minutes = minutes < 10 ? "0" + minutes : minutes;
-                seconds = seconds < 10 ? "0" + seconds : seconds;
-
-                document.querySelector('#time').textContent = minutes + ":" + seconds;
-
-                if (--duration < 0) {
-                    clearInterval(counter)
-                    button.classList.remove("hidden")
-                    document.querySelector('#time').textContent = ''
-                    resolve(1)
-                }
-            }, 1000)
-        })
-    }
-
-    const breakTimer = function (breakDuration, count) {
-        document.body.style.backgroundColor = "#add8e6"
-        clock(breakDuration).then(() => {
-            console.log(count)
-            return count + 1
-        })
-    }
-
-    const activeTimer = function (activeDuration, breakDuration, count) {
-        return new Promise((resolve, reject) => {
-            document.body.style.backgroundColor = "white"
-            clock(activeDuration).then(() => {
-                breakTimer(breakDuration, count)
-            })
-            console.log('active timer')
-            resolve(1)
-        })
-    }
+function getRemainingTime(endTime) {
+    const currentTime = Date.parse(new Date());
+    const difference = endTime - currentTime;
+    const total = Number.parseInt(difference / 1000, 10)
+    const minutes = Number.parseInt((total / 60) % 60, 10)
+    const seconds = Number.parseInt(total % 60, 10)
 
     return {
-        startCycle: function (focus, difficulty) {
-            var activeDuration = (focus * (1 - (difficulty * .1))) * 100
-            var breakDuration = 5
-            let count = 0;
-
-            activeTimer(activeDuration, breakDuration, count).then(() => {
-                console.log('returning')
-            })
-            console.log('final return')
-        },
-
-        // getFocusMultiplier: function () {
-        //     return 100
-        // }
+        total,
+        minutes,
+        seconds,
     }
+}
 
-})()
-
-// App Controller
-
-const App = (function (TimerCtrl, StorageCtrl, UICtrl) {
-    const loadEventListeners = function () {
-        const UISelectors = UICtrl.getSelectors()
-
-        document.querySelector(UISelectors.startTimerBtn).addEventListener('click', startTimerSubmit)
-
+function switchMode(mode) {
+    timer.mode = mode;
+    timer.remainingTime = {
+        total: timer[mode] * 60,
+        minutes: timer[mode],
+        seconds: 0,
     }
+    document.body.style.backgroundColor = `var(--${mode})`;
 
-    const startTimerSubmit = function (e) {
-        const timerValues = UICtrl.getTimerSetValues()
-        // const multiplier = TimerCtrl.getFocusMultiplier()
+    updateClock()
+}
 
-        TimerCtrl.startCycle(timerValues.focus, timerValues.difficulty)
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('loaded')
+    switchMode('pomodoro');
+});
 
-        e.preventDefault()
-    }
+var circle = document.querySelector('circle');
+var radius = circle.r.baseVal.value;
+var circumference = radius * 2 * Math.PI;
 
-    return {
-        init: function () {
-            loadEventListeners()
-        }
-    }
+circle.style.strokeDasharray = `${circumference} ${circumference}`;
+circle.style.strokeDashoffset = `${circumference}`;
 
-})(TimerCtrl, StorageCtrl, UICtrl)
-
-App.init()
-
+function setProgress(percent) {
+    const offset = -(circumference - (percent / 100) * circumference);
+    // const offset = timer.remainingTime.total - percent;
+    circle.style.strokeDashoffset = offset;
+}
