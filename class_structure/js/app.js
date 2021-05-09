@@ -1,13 +1,16 @@
+const clock = new Circle()
+let counter;
+let savedTimer;
+
+
 const timer = {
-    pomodoro: 1,
-    shortBreak: .1,
+    pomodoro: .2,
+    shortBreak: .2,
     longBreak: .2,
     longBreakInterval: 4,
     sessions: 0,
 
 }
-
-let counter;
 
 const mainButton = document.getElementById('main-btn');
 
@@ -20,11 +23,10 @@ mainButton.addEventListener('click', () => {
     }
 })
 
+
 function startTimer() {
-    console.log('starting timer')
     let { total } = timer.remainingTime
     const endTime = Date.parse(new Date()) + total * 1000;
-
 
     counter = setInterval(function () {
         timer.remainingTime = getRemainingTime(endTime)
@@ -55,12 +57,13 @@ function startTimer() {
     mainButton.innerHTML = 'Pause'
 }
 
+
 function stopTimer() {
     clearInterval(counter)
-    console.log('stopping timer')
     mainButton.dataset.action = 'start';
     mainButton.innerHTML = 'Start'
 }
+
 
 function updateClock() {
     const { remainingTime } = timer
@@ -68,15 +71,15 @@ function updateClock() {
     minutes = remainingTime.minutes
     seconds = remainingTime.seconds
 
-    // minutes = minutes < 10 ? "0" + minutes : minutes;
     seconds = seconds < 10 ? "0" + seconds : seconds;
 
     document.querySelector('#time').textContent = minutes + ":" + seconds;
     const percentage = (timer.remainingTime.total / (timer[timer.mode] * 60))
-    console.log(percentage * 100)
-    setProgress(percentage * 100);
 
+    clock.setProgress(percentage * 100);
+    localStorage.setItem('timer', JSON.stringify(timer))
 }
+
 
 function getRemainingTime(endTime) {
     const currentTime = Date.parse(new Date());
@@ -92,32 +95,37 @@ function getRemainingTime(endTime) {
     }
 }
 
+
 function switchMode(mode) {
-    timer.mode = mode;
-    timer.remainingTime = {
-        total: timer[mode] * 60,
-        minutes: timer[mode],
-        seconds: 0,
+    if (mode === savedTimer) {
+        console.log(savedTimer)
+        timer.mode = savedTimer.mode
+        timer.remainingTime = {
+            total: savedTimer.remainingTime.total,
+            minutes: savedTimer.remainingTime.minutes,
+            seconds: savedTimer.remainingTime.seconds,
+        }
+        timer.sessions = savedTimer.sessions
+    } else {
+        timer.mode = mode;
+        timer.remainingTime = {
+            total: timer[mode] * 60,
+            minutes: timer[mode],
+            seconds: 0,
+        }
     }
-    document.body.style.backgroundColor = `var(--${mode})`;
+
+    document.body.style.backgroundColor = `var(--${timer.mode})`;
 
     updateClock()
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('loaded')
-    switchMode('pomodoro');
+    if (localStorage.getItem('timer')) {
+        savedTimer = JSON.parse(localStorage.getItem('timer'));
+        switchMode(savedTimer);
+    } else {
+        switchMode('pomodoro');
+    }
 });
-
-var circle = document.querySelector('circle');
-var radius = circle.r.baseVal.value;
-var circumference = radius * 2 * Math.PI;
-
-circle.style.strokeDasharray = `${circumference} ${circumference}`;
-circle.style.strokeDashoffset = `${circumference}`;
-
-function setProgress(percent) {
-    const offset = -(circumference - (percent / 100) * circumference);
-    // const offset = timer.remainingTime.total - percent;
-    circle.style.strokeDashoffset = offset;
-}
